@@ -112,13 +112,13 @@ finally:
             transaction_name="ChangeColorAtAddr")
         print(f"[+] Comment deleted at {addr_hex}")
 
-if __name__ == "__main__":
-    ghidra_sync_manager = GhidraSyncManager()
-    ghidra_sync_manager.connect()
-    ghidra_sync_manager.highlight_instruction(addr_hex='0x140001563')
-    ghidra_sync_manager.change_color_at_addr(addr_hex="0x140001563", color="Color.PINK")
-    ghidra_sync_manager.add_comment_at_addr(addr_hex="0x140001563",
-                                            comment="w00t",
-                                            comment_type=PRE_COMMENT)
-    sleep(2)
-    ghidra_sync_manager.delete_comment_at_addr(addr_hex="0x140001563", comment_type=PRE_COMMENT)
+# if __name__ == "__main__":
+#     ghidra_sync_manager = GhidraSyncManager()
+#     ghidra_sync_manager.connect()
+#     ghidra_sync_manager.highlight_instruction(addr_hex='0x140001563')
+#     ghidra_sync_manager.change_color_at_addr(addr_hex="0x140001563", color="Color.PINK")
+#     ghidra_sync_manager.add_comment_at_addr(addr_hex="0x140001563",
+#                                             comment="w00t",
+#                                             comment_type=PRE_COMMENT)
+#     sleep(2)
+#     ghidra_sync_manager.delete_comment_at_addr(addr_hex="0x140001563", comment_type=PRE_COMMENT)
