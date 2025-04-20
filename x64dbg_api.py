@@ -33,15 +33,26 @@ def get_arguments():
                         required=False,
                         help="Debugger architecture. "
                              f"Default is {X64_ARCH}.")
+    parser.add_argument("--rebase",
+                        action='store_true',
+                        required=False,
+                        help="Rebase base addresses of the matching modules. "
+                             "This will instruct the script to fetch the base address of the currently "
+                             "loaded module in the debugger and set it as the base address in Ghidra.")
     return parser.parse_args()
 
 
 
 class X64DebuggerConnector:
-    def __init__(self, ip: str, port: int, arch: str):
+    def __init__(self,
+                 ip: str,
+                 port: int,
+                 arch: str,
+                 rebase: bool):
         self.ip = ip
         self.port = port
         self.arch = arch
+        self.rebase = rebase
         if self.arch == X64_ARCH:
             from x64dbg import Debugger
         elif self.arch == X32_ARCH:
@@ -90,7 +101,10 @@ def run_sync_loop(debugger: X64DebuggerConnector, ghidra: GhidraSyncManager, del
 
 def main():
     opts = get_arguments()
-    x64dbg = X64DebuggerConnector(ip=opts.ip, port=opts.port, arch=opts.arch)
+    x64dbg = X64DebuggerConnector(ip=opts.ip,
+                                  port=opts.port,
+                                  arch=opts.arch,
+                                  rebase=opts.rebase)
     x64dbg.connect()
 
     print(f"[*] Main module base address: {hex(x64dbg.get_main_module_base_addr())}")

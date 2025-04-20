@@ -100,7 +100,7 @@ finally:
         codeUnit = listing.getCodeUnitAt(addr)
         codeUnit.setComment(codeUnit.{comment_type}, "{comment}")
 """,
-            transaction_name="ChangeColorAtAddr")
+            transaction_name="AddCommentToAddr")
         print(f"[+] Comment ({comment}) added at {addr_hex}")
     def delete_comment_at_addr(self, addr_hex: str, comment_type: str):
         self._validate_comment_type(comment_type)
@@ -111,12 +111,22 @@ finally:
         codeUnit = listing.getCodeUnitAt(addr)
         codeUnit.setComment(codeUnit.{comment_type}, "")
 """,
-            transaction_name="ChangeColorAtAddr")
+            transaction_name="DeleteCommentAtAddr")
         print(f"[+] Comment deleted at {addr_hex}")
+
+    def set_base_address(self, addr_hex: str):
+        self._execute_in_transaction(
+            f"""
+        addr = toAddr({addr_hex})
+        currentProgram.setImageBase(addr, True)
+""",
+            transaction_name="SetBaseAddr")
+        print(f"[+] Base address set as {addr_hex}")
 
 # if __name__ == "__main__":
 #     ghidra_sync_manager = GhidraSyncManager()
 #     ghidra_sync_manager.connect()
+    # ghidra_sync_manager.set_base_address(addr_hex="0x0000000140000000")
 #     ghidra_sync_manager.highlight_instruction(addr_hex='0x140001563')
 #     ghidra_sync_manager.change_color_at_addr(addr_hex="0x140001563", color="Color.PINK")
 #     ghidra_sync_manager.add_comment_at_addr(addr_hex="0x140001563",
