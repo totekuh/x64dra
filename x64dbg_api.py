@@ -8,6 +8,7 @@ DEFAULT_DEBUGGER_PORT = 6589
 X64_ARCH = 'x64'
 X32_ARCH = 'x32'
 
+
 def get_arguments():
     from argparse import ArgumentParser
     parser = ArgumentParser(description="x64dbg connector")
@@ -42,17 +43,14 @@ def get_arguments():
     return parser.parse_args()
 
 
-
-class X64DebuggerConnector:
+class DebuggerConnector:
     def __init__(self,
                  ip: str,
                  port: int,
-                 arch: str,
-                 rebase: bool):
+                 arch: str):
         self.ip = ip
         self.port = port
         self.arch = arch
-        self.rebase = rebase
         if self.arch == X64_ARCH:
             from x64dbg import Debugger
         elif self.arch == X32_ARCH:
@@ -81,8 +79,22 @@ class X64DebuggerConnector:
         else:
             return 0
 
+    def get_loaded_modules(self):
+        modules = self.dbg.get_module()
+        result = {}
+        if modules:
+            for mod in modules:
+                name = mod['Name'].lower()
+                result[name] = {
+                    "base": mod['Base'],
+                    "entry": mod['Entry'],
+                    "path": mod['Path'],
+                    "size": mod['Size']
+                }
+        return result
 
-def run_sync_loop(debugger: X64DebuggerConnector, ghidra: GhidraSyncManager, delay=0.5):
+
+def run_sync_loop(debugger: DebuggerConnector, ghidra: GhidraSyncManager, delay=0.5):
     print("[*] Starting synchronization loop")
     last_ip = None
 
@@ -99,21 +111,22 @@ def run_sync_loop(debugger: X64DebuggerConnector, ghidra: GhidraSyncManager, del
     finally:
         debugger.disconnect()
 
+
 def main():
     opts = get_arguments()
-    x64dbg = X64DebuggerConnector(ip=opts.ip,
-                                  port=opts.port,
-                                  arch=opts.arch,
-                                  rebase=opts.rebase)
-    x64dbg.connect()
+    dbg_connector = DebuggerConnector(ip=opts.ip,
+                                      port=opts.port,
+                                      arch=opts.arch)
+    dbg_connector.connect()
 
-    print(f"[*] Main module base address: {hex(x64dbg.get_main_module_base_addr())}")
-    print(f"[*] Initial instruction pointer: {hex(x64dbg.get_instruction_pointer())}")
+    print(f"[*] Main module base address: {hex(dbg_connector.get_main_module_base_addr())}")
+    print(f"[*] Initial instruction pointer: {hex(dbg_connector.get_instruction_pointer())}")
 
     ghidra = GhidraSyncManager()
     ghidra.connect()
 
-    run_sync_loop(x64dbg, ghidra)
+    run_sync_loop(dbg_connector, ghidra)
+
 
 if __name__ == "__main__":
     main()

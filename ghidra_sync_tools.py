@@ -4,6 +4,7 @@ from time import sleep
 PLATE_COMMENT = "PLATE_COMMENT"
 PRE_COMMENT = "PRE_COMMENT"
 
+
 class GhidraSyncManager:
     def __init__(self):
         self.current_addr = None
@@ -91,6 +92,7 @@ finally:
 """,
             transaction_name="ChangeColorAtAddr")
         print(f"[+] Color changed to {color} at {addr_hex}")
+
     def add_comment_at_addr(self, addr_hex: str, comment: str, comment_type: str):
         self._validate_comment_type(comment_type)
         self._execute_in_transaction(
@@ -102,6 +104,7 @@ finally:
 """,
             transaction_name="AddCommentToAddr")
         print(f"[+] Comment ({comment}) added at {addr_hex}")
+
     def delete_comment_at_addr(self, addr_hex: str, comment_type: str):
         self._validate_comment_type(comment_type)
         self._execute_in_transaction(
@@ -123,10 +126,39 @@ finally:
             transaction_name="SetBaseAddr")
         print(f"[+] Base address set as {addr_hex}")
 
-# if __name__ == "__main__":
-#     ghidra_sync_manager = GhidraSyncManager()
-#     ghidra_sync_manager.connect()
-    # ghidra_sync_manager.set_base_address(addr_hex="0x0000000140000000")
+    def get_base_address(self):
+        result = self.bridge.remote_eval(
+            f"""
+        currentProgram.getImageBase()
+""")
+        return f"0x{result}"
+
+    def get_file_name(self):
+        return self.bridge.remote_eval(
+            f"""
+    currentProgram.getDomainFile().getName()
+""")
+
+    def get_loaded_files(self):
+        result = self.bridge.remote_eval(
+            """
+    [(p.getDomainFile().getName(), str(p.getImageBase())) 
+     for p in state.getTool().getService(ghidra.app.services.ProgramManager).getAllOpenPrograms()]
+    """
+        )
+        print(f"[*] Found {len(result)} loaded files")
+        loaded_files = {}
+        for name, addr in result:
+            loaded_files[name] = f"0x{addr}"
+        return loaded_files
+
+if __name__ == "__main__":
+    ghidra_sync_manager = GhidraSyncManager()
+    ghidra_sync_manager.connect()
+    print(ghidra_sync_manager.get_base_address())
+    print(ghidra_sync_manager.get_file_name())
+    print(ghidra_sync_manager.get_loaded_files())
+#     ghidra_sync_manager.set_base_address(addr_hex="0x0000000140000000")
 #     ghidra_sync_manager.highlight_instruction(addr_hex='0x140001563')
 #     ghidra_sync_manager.change_color_at_addr(addr_hex="0x140001563", color="Color.PINK")
 #     ghidra_sync_manager.add_comment_at_addr(addr_hex="0x140001563",
