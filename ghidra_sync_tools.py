@@ -1,50 +1,38 @@
 ﻿from ghidra_bridge import GhidraBridge
 
-bridge = None
-
 def connect():
-    global bridge
-    if bridge is None:
-        print("[*] Connecting to GhidraBridge...")
-        bridge = GhidraBridge(namespace=globals())
-        print("[+] Connected to Ghidra.")
-    else:
-        print("[*] GhidraBridge already connected.")
+    print("[*] Connecting to GhidraBridge...")
+    bridge = GhidraBridge()  # no namespace injection
+    print("[+] Connected.")
+    return bridge
 
-def get_functions():
-    if currentProgram is None:
-        raise RuntimeError("[-] No program loaded in Ghidra.")
+def get_functions(bridge):
+    result = bridge.remote_eval(
+        "[ (f.getName(), str(f.getEntryPoint())) "
+        "for f in currentProgram.getFunctionManager().getFunctions(True) ]"
+    )
+    print(f"[*] {len(result)} functions in the current binary:")
+    functions = {}
+    for name, addr in result:
+        functions[name] = addr
+    return functions
 
-    func_mgr = currentProgram.getFunctionManager()
-    functions = func_mgr.getFunctions(True)
-
-    func_list = []
-    for f in functions:
-        func_list.append((f.getName(), str(f.getEntryPoint())))
-    return func_list
-
-def highlight_instruction(addr_hex):
-    if currentProgram is None:
-        raise RuntimeError("[-] No program loaded in Ghidra.")
-
-    listing = currentProgram.getListing()
-    addr = toAddr(addr_hex)
-    code_unit = listing.getCodeUnitAt(addr)
-
-    # Navigate disassembly view to this address
+def highlight_instruction(bridge, addr_hex):
+    script = f"""
+tx = currentProgram.startTransaction("SyncHighlight")
+try:
+    addr = toAddr("{addr_hex}")
     goTo(addr)
+    cu = currentProgram.getListing().getCodeUnitAt(addr)
+    cu.setComment(cu.EOL_COMMENT, "⛓ Synced with debugger")
+finally:
+    currentProgram.endTransaction(tx, True)
+"""
+    bridge.remote_exec(script)
+    print(f"[+] Jumped to {addr_hex} and tagged it.")
 
-    # Add a comment to simulate visual feedback (can be replaced with color/highlight)
-    code_unit.setComment(code_unit.EOL_COMMENT, "⛓ Synced with debugger")
 
-    print(f"[+] Jumped to {addr} and tagged it.")
 
-# For test/dev mode
 if __name__ == "__main__":
-    connect()
-    funcs = get_functions()
-    for name, addr in funcs[:10]:
-        print(f"{name} @ {addr}")
-
-    # Example sync highlight
-    highlight_instruction("0x401000")
+    bridge = connect()
+    highlight_instruction(bridge=bridge, addr_hex='0x140001428')
