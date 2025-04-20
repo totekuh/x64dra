@@ -20,6 +20,7 @@ def get_functions(bridge):
 def highlight_instruction(bridge, addr_hex):
     script = f"""
 tx = currentProgram.startTransaction("SyncHighlight")
+
 try:
     addr = toAddr("{addr_hex}")
     goTo(addr)
