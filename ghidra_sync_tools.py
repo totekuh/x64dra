@@ -1,6 +1,29 @@
 ﻿from ghidra_bridge import GhidraBridge
 from time import sleep
 
+VALID_COLORS = {
+    "Color.BLACK",
+    "Color.BLUE",
+    "Color.CYAN",
+    "Color.DARK_GRAY",
+    "Color.GRAY",
+    "Color.GREEN",
+    "Color.LIGHT_GRAY",
+    "Color.MAGENTA",
+    "Color.ORANGE",
+    "Color.PINK",
+    "Color.RED",
+    "Color.WHITE",
+    "Color.YELLOW"
+}
+
+def validate_color(color: str):
+    if color not in VALID_COLORS:
+        print("[!] Invalid color.")
+        print("Valid colores are:")
+        for color in VALID_COLORS:
+            print(color)
+        exit(1)
 
 def connect():
     print("[*] Connecting to GhidraBridge...")
@@ -38,27 +61,26 @@ def highlight_instruction(bridge, addr_hex):
     goTo(addr)
 """,
                            transaction_name="SyncAddress")
-    print(f"[+] Jumped to {addr_hex} and tagged it.")
+    print(f"[+] Jumped to {addr_hex}")
 
 
-def change_color_at_addr(bridge, addr_hex, color):
-    script = f"""
-tx = currentProgram.startTransaction("SyncHighlight")
-
-try:
+def change_color_at_addr(bridge, addr_hex: str, color: str):
+    validate_color(color=color)
+    execute_in_transaction(bridge,
+                           statement=f"""
     addr = toAddr("{addr_hex}")
-    goTo(addr)
-finally:
-    currentProgram.endTransaction(tx, True)
-"""
-    bridge.remote_exec(script)
-    print(f"[+] Jumped to {addr_hex} and tagged it.")
+    setBackgroundColor(addr, {color});
+""",
+                           transaction_name="ChangeColorAtAddr")
+    print(f"[+] Color changed to {color} at {addr_hex}")
 
 
 if __name__ == "__main__":
     bridge = connect()
-    highlight_instruction(bridge=bridge, addr_hex='0x140002f2c')
-    sleep(2)
-    highlight_instruction(bridge=bridge, addr_hex='0x140002f36')
-    sleep(2)
+    # highlight_instruction(bridge=bridge, addr_hex='0x140002f2c')
+    # sleep(2)
+    # highlight_instruction(bridge=bridge, addr_hex='0x140002f36')
+    # sleep(2)
     highlight_instruction(bridge=bridge, addr_hex='0x140003031')
+    change_color_at_addr(bridge, addr_hex="0x140003031",
+                         color="Color.PINK")
