@@ -46,6 +46,8 @@ class GhidraSyncManager:
             exit(1)
 
     def _execute_in_transaction(self, statement: str, transaction_name: str):
+        # API docs
+        # https://ghidra.re/ghidra_docs/api/index.html
         return self.bridge.remote_exec(f"""
 tx = currentProgram.startTransaction("{transaction_name}")
 try:

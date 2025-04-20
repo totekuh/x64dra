@@ -71,33 +71,35 @@ class X64DebuggerConnector:
             return 0
 
 
-def main():
-    options = get_arguments()
-    ip = options.ip
-    port = options.port
-    arch = options.arch
-    x64dbg_connector = X64DebuggerConnector(ip=ip, port=port, arch=arch)
-    x64dbg_connector.connect()
-    main_module_base_addr = hex(x64dbg_connector.get_main_module_base_addr())
-    print(f"[*] Main module base address: {main_module_base_addr}")
-
-    print(f"[*] Current instruction pointer: {hex(x64dbg_connector.get_instruction_pointer())}")
-
-    ghidra_sync_manager = GhidraSyncManager()
-    ghidra_sync_manager.connect()
-
+def run_sync_loop(debugger: X64DebuggerConnector, ghidra: GhidraSyncManager, delay=0.5):
     print("[*] Starting synchronization loop")
+    last_ip = None
+
     try:
         while True:
-            instruction_pointer = hex(x64dbg_connector.get_instruction_pointer())
-            ghidra_sync_manager.highlight_instruction(addr_hex=instruction_pointer)
-            sleep(0.5)
+            current_ip = debugger.get_instruction_pointer()
+            if current_ip != last_ip:
+                addr_hex = hex(current_ip)
+                ghidra.highlight_instruction(addr_hex=addr_hex)
+                last_ip = current_ip
+            sleep(delay)
     except KeyboardInterrupt:
-        print()
-        print("Interrupted")
+        print("\n[!] Sync interrupted.")
     finally:
-        x64dbg_connector.disconnect()
+        debugger.disconnect()
 
+def main():
+    opts = get_arguments()
+    x64dbg = X64DebuggerConnector(ip=opts.ip, port=opts.port, arch=opts.arch)
+    x64dbg.connect()
+
+    print(f"[*] Main module base address: {hex(x64dbg.get_main_module_base_addr())}")
+    print(f"[*] Initial instruction pointer: {hex(x64dbg.get_instruction_pointer())}")
+
+    ghidra = GhidraSyncManager()
+    ghidra.connect()
+
+    run_sync_loop(x64dbg, ghidra)
 
 if __name__ == "__main__":
     main()
