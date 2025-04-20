@@ -24,7 +24,7 @@ try:
     addr = toAddr("{addr_hex}")
     goTo(addr)
     cu = currentProgram.getListing().getCodeUnitAt(addr)
-    cu.setComment(cu.EOL_COMMENT, "⛓ Synced with debugger")
+    # cu.setComment(cu.EOL_COMMENT, "⛓ Synced with debugger")
 finally:
     currentProgram.endTransaction(tx, True)
 """
@@ -35,4 +35,4 @@ finally:
 
 if __name__ == "__main__":
     bridge = connect()
-    highlight_instruction(bridge=bridge, addr_hex='0x140001428')
+    highlight_instruction(bridge=bridge, addr_hex='140002f2c')
