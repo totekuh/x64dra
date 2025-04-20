@@ -74,11 +74,34 @@ finally:
 """,
             transaction_name="ChangeColorAtAddr")
         print(f"[+] Color changed to {color} at {addr_hex}")
-
+    def add_comment_at_addr(self, addr_hex: str, comment: str):
+        self._execute_in_transaction(
+            f"""
+        addr = toAddr({addr_hex})
+        listing = currentProgram.getListing()
+        codeUnit = listing.getCodeUnitAt(addr)
+        codeUnit.setComment(codeUnit.PLATE_COMMENT, "{comment}")
+""",
+            transaction_name="ChangeColorAtAddr")
+        print(f"[+] Comment ({comment}) added at {addr_hex}")
+    def delete_comment_at_addr(self, addr_hex: str):
+        self._execute_in_transaction(
+            f"""
+        addr = toAddr({addr_hex})
+        listing = currentProgram.getListing()
+        codeUnit = listing.getCodeUnitAt(addr)
+        codeUnit.setComment(codeUnit.PLATE_COMMENT, "")
+""",
+            transaction_name="ChangeColorAtAddr")
+        print(f"[+] Comment deleted at {addr_hex}")
 
 if __name__ == "__main__":
     ghidra_sync_manager = GhidraSyncManager()
     ghidra_sync_manager.connect()
     ghidra_sync_manager.highlight_instruction(addr_hex='0x140003031')
     ghidra_sync_manager.change_color_at_addr(addr_hex="0x140003031",
-                         color="Color.PINK")
+                         color="Color.WHITE")
+    ghidra_sync_manager.add_comment_at_addr(addr_hex="0x140003031",
+                                            comment="w00t")
+    sleep(2)
+    ghidra_sync_manager.delete_comment_at_addr(addr_hex="0x140003031")
