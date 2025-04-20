@@ -1,5 +1,5 @@
 ﻿from ghidra_bridge import GhidraBridge
-
+from time import sleep
 def connect():
     print("[*] Connecting to GhidraBridge...")
     bridge = GhidraBridge()  # no namespace injection
@@ -23,8 +23,6 @@ tx = currentProgram.startTransaction("SyncHighlight")
 try:
     addr = toAddr("{addr_hex}")
     goTo(addr)
-    cu = currentProgram.getListing().getCodeUnitAt(addr)
-    # cu.setComment(cu.EOL_COMMENT, "⛓ Synced with debugger")
 finally:
     currentProgram.endTransaction(tx, True)
 """
@@ -35,4 +33,8 @@ finally:
 
 if __name__ == "__main__":
     bridge = connect()
-    highlight_instruction(bridge=bridge, addr_hex='140002f2c')
+    highlight_instruction(bridge=bridge, addr_hex='0x140002f2c')
+    sleep(2)
+    highlight_instruction(bridge=bridge, addr_hex='0x140002f36')
+    sleep(2)
+    highlight_instruction(bridge=bridge, addr_hex='0x140003031')
