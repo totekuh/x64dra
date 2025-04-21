@@ -151,6 +151,7 @@ def run_sync_loop(debugger: DebuggerConnector, ghidra: GhidraSyncManager, delay=
             file_name = module["module"]
             if file_name not in ghidra.get_loaded_files():
                 print(f"[-] {file_name} ({addr_hex}) not loaded in Ghidra — skipping.")
+                print(f" -> consider importing it from {module['path']}")
             else:
                 ghidra.highlight_instruction_in_file(file_name=file_name, addr_hex=addr_hex)
                 print(f"[+] Jumped to {addr_hex} in {file_name}")

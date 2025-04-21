@@ -130,14 +130,6 @@ for p in pm.getAllOpenPrograms():
             transaction_name="DeleteCommentAtAddr")
         print(f"[+] Comment deleted at {addr_hex}")
 
-    def set_current_program_base_address(self, addr_hex: str):
-        self._execute_in_transaction(
-            f"""
-        addr = toAddr({addr_hex})
-        currentProgram.setImageBase(addr, True)
-""",
-            transaction_name="SetBaseAddr")
-
     def get_base_address(self):
         result = self.bridge.remote_eval(
             f"""
@@ -179,12 +171,12 @@ for p in open_programs:
 """, transaction_name="SetModuleBaseAddr")
 
 
-if __name__ == "__main__":
-    ghidra_sync_manager = GhidraSyncManager()
-    ghidra_sync_manager.connect()
-    print(ghidra_sync_manager.get_base_address())
-    print(ghidra_sync_manager.get_current_program_file_name())
-    print(ghidra_sync_manager.get_loaded_files())
+# if __name__ == "__main__":
+#     ghidra_sync_manager = GhidraSyncManager()
+#     ghidra_sync_manager.connect()
+#     print(ghidra_sync_manager.get_base_address())
+#     print(ghidra_sync_manager.get_current_program_file_name())
+#     print(ghidra_sync_manager.get_loaded_files())
     # ghidra_sync_manager.set_base_address(addr_hex="0x0000000140000000")
 #     ghidra_sync_manager.highlight_instruction(addr_hex='0x140001563')
 #     ghidra_sync_manager.change_color_at_addr(addr_hex="0x140001563", color="Color.PINK")
