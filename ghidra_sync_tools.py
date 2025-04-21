@@ -79,7 +79,6 @@ finally:
         goTo(addr)
     """,
             transaction_name="SyncAddress")
-        print(f"[+] Jumped to {addr_hex}")
 
     def change_color_at_addr(self, addr_hex: str, color: str):
         self._validate_color(color=color)

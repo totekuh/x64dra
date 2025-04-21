@@ -93,6 +93,22 @@ class DebuggerConnector:
                 }
         return result
 
+    def find_module_by_address(self, addr: int):
+        modules = self.get_loaded_modules()
+        for name, mod in modules.items():
+            base = int(mod["base"], 16)
+            size = mod["size"]
+            if base <= addr < base + size:
+                return {
+                    "module": name,
+                    "base": hex(base),
+                    "size": hex(size),
+                    "path": mod["path"],
+                    "offset": hex(addr - base)
+                }
+        return None
+
+
 def sync_loaded_modules(debugger: DebuggerConnector, ghidra: GhidraSyncManager):
     print("[*] Checking for base address mismatches...")
 
@@ -119,10 +135,17 @@ def run_sync_loop(debugger: DebuggerConnector, ghidra: GhidraSyncManager, delay=
     try:
         while True:
             current_ip = debugger.get_instruction_pointer()
+            addr_hex = hex(current_ip)
+            print(current_ip)
             if current_ip != last_ip:
-                addr_hex = hex(current_ip)
-                ghidra.highlight_instruction(addr_hex=addr_hex)
-                last_ip = current_ip
+                current_module = debugger.find_module_by_address(current_ip)
+                if not current_module:
+                    raise Exception(f"Loaded module at {addr_hex} wasn't found. This is probably a bug.")
+                else:
+                    file_name = current_module['module']
+                    ghidra.highlight_instruction(addr_hex=addr_hex)
+                    print(f"[+] Jumped to {addr_hex} ({file_name})")
+                    last_ip = current_ip
             sleep(delay)
     except KeyboardInterrupt:
         print("\n[!] Sync interrupted.")
