@@ -1,6 +1,6 @@
 ﻿from time import sleep
 
-from ghidra_sync_tools import GhidraSyncManager
+from x64dra.ghidra_sync_tools import GhidraSyncManager
 
 DEFAULT_DEBUGGER_IP = "127.0.0.1"
 DEFAULT_DEBUGGER_PORT = 6589
@@ -212,7 +212,7 @@ def main():
     dbg_connector.connect()
 
     print(f"[*] Main module base address: {hex(dbg_connector.get_main_module_base_addr())}")
-    print(f"[*] Initial instruction pointer: {hex(dbg_connector.get_instruction_pointer())}")
+    print(f"[*] Current instruction pointer: {hex(dbg_connector.get_instruction_pointer())}")
 
     ghidra = GhidraSyncManager()
     ghidra.connect()
