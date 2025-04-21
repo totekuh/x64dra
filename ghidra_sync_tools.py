@@ -1,5 +1,4 @@
 ﻿from ghidra_bridge import GhidraBridge
-from time import sleep
 
 PLATE_COMMENT = "PLATE_COMMENT"
 PRE_COMMENT = "PRE_COMMENT"
@@ -117,14 +116,13 @@ finally:
             transaction_name="DeleteCommentAtAddr")
         print(f"[+] Comment deleted at {addr_hex}")
 
-    def set_base_address(self, addr_hex: str):
+    def set_current_program_base_address(self, addr_hex: str):
         self._execute_in_transaction(
             f"""
         addr = toAddr({addr_hex})
         currentProgram.setImageBase(addr, True)
 """,
             transaction_name="SetBaseAddr")
-        print(f"[+] Base address set as {addr_hex}")
 
     def get_base_address(self):
         result = self.bridge.remote_eval(
@@ -133,7 +131,7 @@ finally:
 """)
         return f"0x{result}"
 
-    def get_file_name(self):
+    def get_current_program_file_name(self):
         return self.bridge.remote_eval(
             f"""
     currentProgram.getDomainFile().getName()
@@ -152,13 +150,28 @@ finally:
             loaded_files[name] = f"0x{addr}"
         return loaded_files
 
+    def set_base_address(self, file_name: str, addr_hex: str):
+        self.bridge.remote_exec(f"""
+addr = toAddr({addr_hex})
+open_programs = state.getTool().getService(ghidra.app.services.ProgramManager).getAllOpenPrograms();
+for p in open_programs:
+    if p.getDomainFile().getName() == "{file_name}":
+        tx = p.startTransaction("SetImageBase")
+        try:
+            p.setImageBase(addr, True)
+        finally:
+            p.endTransaction(tx, True)
+
+""", transaction_name="SetModuleBaseAddr")
+
+
 if __name__ == "__main__":
     ghidra_sync_manager = GhidraSyncManager()
     ghidra_sync_manager.connect()
     print(ghidra_sync_manager.get_base_address())
-    print(ghidra_sync_manager.get_file_name())
+    print(ghidra_sync_manager.get_current_program_file_name())
     print(ghidra_sync_manager.get_loaded_files())
-#     ghidra_sync_manager.set_base_address(addr_hex="0x0000000140000000")
+    # ghidra_sync_manager.set_base_address(addr_hex="0x0000000140000000")
 #     ghidra_sync_manager.highlight_instruction(addr_hex='0x140001563')
 #     ghidra_sync_manager.change_color_at_addr(addr_hex="0x140001563", color="Color.PINK")
 #     ghidra_sync_manager.add_comment_at_addr(addr_hex="0x140001563",

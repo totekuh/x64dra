@@ -86,12 +86,30 @@ class DebuggerConnector:
             for mod in modules:
                 name = mod['Name'].lower()
                 result[name] = {
-                    "base": mod['Base'],
-                    "entry": mod['Entry'],
+                    "base": hex(mod['Base']),
+                    "entry": hex(mod['Entry']),
                     "path": mod['Path'],
                     "size": mod['Size']
                 }
         return result
+
+def sync_loaded_modules(debugger: DebuggerConnector, ghidra: GhidraSyncManager):
+    print("[*] Checking for base address mismatches...")
+
+    dbg_modules = debugger.get_loaded_modules()
+    ghidra_files = ghidra.get_loaded_files()
+
+    for ghidra_name, ghidra_base in ghidra_files.items():
+        ghidra_name = ghidra_name.lower()
+        if ghidra_name in dbg_modules:
+            dbg_base = dbg_modules[ghidra_name]["base"]
+            if dbg_base != ghidra_base:
+                print(f"    -> Rebasing {ghidra_name}: {ghidra_base} → {dbg_base}")
+                ghidra.set_base_address(file_name=ghidra_name, addr_hex=dbg_base)
+            else:
+                print(f"    -> {ghidra_name} already in sync.")
+        else:
+            print(f"    -> {ghidra_name} not found in debugger's loaded modules.")
 
 
 def run_sync_loop(debugger: DebuggerConnector, ghidra: GhidraSyncManager, delay=0.5):
@@ -124,6 +142,9 @@ def main():
 
     ghidra = GhidraSyncManager()
     ghidra.connect()
+
+    if opts.rebase:
+        sync_loaded_modules(debugger=dbg_connector, ghidra=ghidra)
 
     run_sync_loop(dbg_connector, ghidra)
 
