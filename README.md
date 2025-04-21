@@ -102,5 +102,5 @@ x64dra --help
 
 ## Demo
 
-<video src='https://github.com/totekuh/x64dra/raw/refs/heads/master/demo.mp4' width=180/>
+https://github.com/user-attachments/assets/e404d8ea-cfe2-4d1b-98a0-7b3c9016e68d
 
