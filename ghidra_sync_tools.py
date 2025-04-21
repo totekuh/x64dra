@@ -151,6 +151,7 @@ finally:
         return loaded_files
 
     def set_base_address(self, file_name: str, addr_hex: str):
+        # don't change indents, otherwise jython will choke
         self.bridge.remote_exec(f"""
 addr = toAddr({addr_hex})
 open_programs = state.getTool().getService(ghidra.app.services.ProgramManager).getAllOpenPrograms();
