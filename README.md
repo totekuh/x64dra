@@ -100,3 +100,7 @@ Print help:
 x64dra --help
 ```
 
+## Demo
+
+<video src='https://github.com/totekuh/x64dra/raw/refs/heads/master/demo.mp4' width=180/>
+
