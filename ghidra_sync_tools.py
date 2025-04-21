@@ -61,6 +61,31 @@ finally:
         self.bridge = GhidraBridge()  # no namespace injection
         print("[+] Connected.")
 
+    def get_functions_in_file(self, file_name):
+        self.bridge.remote_exec(f'''
+from ghidra.app.services import ProgramManager
+tool = state.getTool()
+pm = tool.getService(ProgramManager)
+
+__tmp_func_list = []
+
+for p in pm.getAllOpenPrograms():
+    if p.getDomainFile().getName() == "{file_name}":
+        fm = p.getFunctionManager()
+        for f in fm.getFunctions(True):
+            name = f.getName()
+            addr = f.getEntryPoint().getOffset()
+            __tmp_func_list.append((name, addr))
+''')
+
+    # Step 2: pull the temp results back out
+        result = self.bridge.remote_eval("__tmp_func_list")
+        functions = {}
+        if result:
+            for name, addr_int in result:
+                functions[name] = addr_int
+        return functions
+
     def get_functions(self):
         result = self.bridge.remote_eval(
             "[ (f.getName(), str(f.getEntryPoint())) "
@@ -176,6 +201,7 @@ for p in open_programs:
 #     ghidra_sync_manager.connect()
 #     print(ghidra_sync_manager.get_base_address())
 #     print(ghidra_sync_manager.get_current_program_file_name())
+#     print(ghidra_sync_manager.get_functions_in_file(file_name="sync_test.exe"))
 #     print(ghidra_sync_manager.get_loaded_files())
     # ghidra_sync_manager.set_base_address(addr_hex="0x0000000140000000")
 #     ghidra_sync_manager.highlight_instruction(addr_hex='0x140001563')

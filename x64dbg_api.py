@@ -12,19 +12,25 @@ X32_ARCH = 'x32'
 def get_arguments():
     from argparse import ArgumentParser
     parser = ArgumentParser(description="x64dbg connector")
-    parser.add_argument("--ip",
+    parser.add_argument("-i",
+                        "--ip",
+                        dest="ip",
                         type=str,
                         default=DEFAULT_DEBUGGER_IP,
                         required=False,
                         help="IP address of the x64dbg API socket. "
                              f"Default is {DEFAULT_DEBUGGER_IP}.")
-    parser.add_argument("--port",
+    parser.add_argument("-p",
+                        "--port",
+                        dest="port",
                         type=int,
                         default=DEFAULT_DEBUGGER_PORT,
                         required=False,
                         help="Port number of the x64dbg API socket. "
                              f"Default is {DEFAULT_DEBUGGER_PORT}.")
-    parser.add_argument("--arch",
+    parser.add_argument("-a",
+                        "--arch",
+                        dest="arch",
                         type=str,
                         choices=[
                             X64_ARCH,
@@ -34,12 +40,34 @@ def get_arguments():
                         required=False,
                         help="Debugger architecture. "
                              f"Default is {X64_ARCH}.")
-    parser.add_argument("--rebase",
+    parser.add_argument("-s",
+                        "--sync",
+                        dest="sync",
+                        action='store_true',
+                        required=False,
+                        help="Start synchronization between x64dbg and Ghidra. "
+                             "The script will start polling the current instruction pointer from x64dbg "
+                             "and will invoke Go-To in Ghidra with the address received from x64dbg "
+                             "to track it in Ghidra. "
+                             "Note that you might need to rebase your modules first by using --rebase "
+                             "to make sure the addresses are consistent between the two.")
+    parser.add_argument("-r",
+                        "--rebase",
+                        dest="rebase",
                         action='store_true',
                         required=False,
                         help="Rebase base addresses of the matching modules. "
-                             "This will instruct the script to fetch the base address of the currently "
-                             "loaded module in the debugger and set it as the base address in Ghidra.")
+                             "The script will fetch the base addresses of the loaded modules "
+                             "and use them to rebase loaded modules in Ghidra having the same names.")
+    parser.add_argument("-ges",
+                        "--ghidra-export-symbols",
+                        dest="ghidra_export_symbols",
+                        type=str,
+                        required=False,
+                        help="Use this to export function names of the given module from Ghidra "
+                             "and use the received symbols to label corresponding addresses in x64dbg, "
+                             "so that the CALL instructions in your debugger will have meaningful names. "
+                             "Careful: make sure you rebase your modules first.")
     return parser.parse_args()
 
 
@@ -108,8 +136,11 @@ class DebuggerConnector:
                 }
         return None
 
+    def add_label(self, addr: int, label: str):
+        self.dbg.set_label_at(addr, label)
 
-def sync_loaded_modules(debugger: DebuggerConnector, ghidra: GhidraSyncManager):
+
+def rebase_loaded_modules(debugger: DebuggerConnector, ghidra: GhidraSyncManager):
     print("[*] Checking for base address mismatches...")
 
     dbg_modules = debugger.get_loaded_modules()
@@ -164,6 +195,14 @@ def run_sync_loop(debugger: DebuggerConnector, ghidra: GhidraSyncManager, delay=
         debugger.disconnect()
 
 
+def export_symbols_from_ghidra(debugger: DebuggerConnector, ghidra: GhidraSyncManager, module_name: str):
+    print(f"[*] Exporting symbols from {module_name}")
+    module_functions = ghidra.get_functions_in_file(file_name=module_name)
+    for name, addr in module_functions.items():
+        print(f" -> {name} - {hex(addr)}")
+        debugger.add_label(addr=addr, label=name)
+
+    # dbg_connector.dbg.set_function_brackets(start_address=0x140006b70, end_address=0x140006bb0)
 
 def main():
     opts = get_arguments()
@@ -179,10 +218,12 @@ def main():
     ghidra.connect()
 
     if opts.rebase:
-        sync_loaded_modules(debugger=dbg_connector, ghidra=ghidra)
-
-    run_sync_loop(dbg_connector, ghidra)
-
+        rebase_loaded_modules(debugger=dbg_connector, ghidra=ghidra)
+    module_name = opts.ghidra_export_symbols
+    if module_name:
+        export_symbols_from_ghidra(debugger=dbg_connector, ghidra=ghidra, module_name=module_name)
+    if opts.sync:
+        run_sync_loop(dbg_connector, ghidra)
 
 if __name__ == "__main__":
     main()
