@@ -80,6 +80,21 @@ finally:
     """,
             transaction_name="SyncAddress")
 
+    def highlight_instruction_in_file(self, file_name: str, addr_hex: str):
+        self.bridge.remote_exec(f'''
+from ghidra.app.services import ProgramManager
+tool = state.getTool()
+pm = tool.getService(ProgramManager)
+
+# Find the matching program
+for p in pm.getAllOpenPrograms():
+    if p.getDomainFile().getName() == "{file_name}":
+        # Set the program as active
+        pm.setCurrentProgram(p)
+''', transaction_name="JumpToInstruction")
+        self.highlight_instruction(addr_hex=addr_hex)
+
+
     def change_color_at_addr(self, addr_hex: str, color: str):
         self._validate_color(color=color)
         self._execute_in_transaction(
@@ -143,7 +158,6 @@ finally:
      for p in state.getTool().getService(ghidra.app.services.ProgramManager).getAllOpenPrograms()]
     """
         )
-        print(f"[*] Found {len(result)} loaded files")
         loaded_files = {}
         for name, addr in result:
             loaded_files[name] = f"0x{addr}"

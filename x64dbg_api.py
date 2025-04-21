@@ -134,23 +134,34 @@ def run_sync_loop(debugger: DebuggerConnector, ghidra: GhidraSyncManager, delay=
 
     try:
         while True:
-            current_ip = debugger.get_instruction_pointer()
-            addr_hex = hex(current_ip)
-            print(current_ip)
-            if current_ip != last_ip:
-                current_module = debugger.find_module_by_address(current_ip)
-                if not current_module:
-                    raise Exception(f"Loaded module at {addr_hex} wasn't found. This is probably a bug.")
-                else:
-                    file_name = current_module['module']
-                    ghidra.highlight_instruction(addr_hex=addr_hex)
-                    print(f"[+] Jumped to {addr_hex} ({file_name})")
-                    last_ip = current_ip
+            ip = debugger.get_instruction_pointer()
+            if ip == 0:
+                print("[*] Instruction pointer is 0 — target not running. Exiting.")
+                break
+            if ip == last_ip:
+                sleep(delay)
+                continue
+            last_ip = ip
+
+            addr_hex = hex(ip)
+            module = debugger.find_module_by_address(ip)
+            if not module:
+                raise Exception(f"[!] Module not found for address {addr_hex}")
+
+            file_name = module["module"]
+            if file_name not in ghidra.get_loaded_files():
+                print(f"[-] {file_name} ({addr_hex}) not loaded in Ghidra — skipping.")
+            else:
+                ghidra.highlight_instruction_in_file(file_name=file_name, addr_hex=addr_hex)
+                print(f"[+] Jumped to {addr_hex} in {file_name}")
+
             sleep(delay)
+
     except KeyboardInterrupt:
         print("\n[!] Sync interrupted.")
     finally:
         debugger.disconnect()
+
 
 
 def main():
